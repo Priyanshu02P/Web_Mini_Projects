@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Scheduler // CPU Process Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">CPU</span>
+    <div class="brand-text">
+      <h1>Scheduler<span class="dot">.</span></h1>
+      <p>process scheduling simulator &mdash; timeline &amp; queue trace</p>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <span id="clockReadout" class="mono">t = 0</span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ LEFT: CONFIG ============ -->
+  <section class="panel config-panel">
+
+    <div class="panel-head">
+      <h2>01 &nbsp;Processes</h2>
+      <button id="addProcessBtn" class="btn btn-ghost">+ add process</button>
+    </div>
+
+    <div class="table-scroll">
+      <table id="processTable" class="proc-table">
+        <thead>
+          <tr>
+            <th>id</th>
+            <th>arrival</th>
+            <th>burst</th>
+            <th class="priority-col hidden">priority</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="processTableBody"><!-- rows injected --></tbody>
+      </table>
+    </div>
+
+    <div class="panel-head" style="margin-top:28px;">
+      <h2>02 &nbsp;Algorithm</h2>
+    </div>
+
+    <label class="field">
+      <span>Scheduling policy</span>
+      <select id="algorithmSelect"></select>
+    </label>
+
+    <label class="field" id="quantumField" hidden>
+      <span>Time quantum</span>
+      <input type="number" id="timeQuantum" min="1" value="2" />
+    </label>
+
+    <label class="field">
+      <span>Context switch overhead (time units)</span>
+      <input type="number" id="contextSwitchTime" min="0" value="0" />
+    </label>
+
+    <label class="field radio-field" id="priorityOrderField" hidden>
+      <span>Priority convention</span>
+      <div class="segmented">
+        <button type="button" class="seg-btn active" data-val="true">lower = higher priority</button>
+        <button type="button" class="seg-btn" data-val="false">higher = higher priority</button>
+      </div>
+    </label>
+
+    <button id="runBtn" class="btn btn-primary btn-run">
+      <span>Run simulation</span>
+    </button>
+
+    <p id="errorBanner" class="error-banner hidden"></p>
+  </section>
+
+  <!-- ============ RIGHT: RESULTS ============ -->
+  <section class="panel results-panel">
+
+    <div id="emptyState" class="empty-state">
+      <div class="empty-glyph">&#9646;&#9647;&#9646;</div>
+      <p>Configure processes on the left, choose an algorithm, and run the
+        simulation to see the execution timeline, the ready-queue trace,
+        and per-process metrics.</p>
+    </div>
+
+    <div id="resultsWrap" class="hidden">
+
+      <div class="panel-head">
+        <h2>03 &nbsp;Execution timeline</h2>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="timeline-scroll">
+        <div class="ruler" id="ruler"></div>
+        <div class="gantt" id="gantt"></div>
+        <div class="track-label mono">ready queue</div>
+        <div class="readyqueue" id="readyQueue"></div>
+      </div>
+
+      <div class="stat-row" id="csStat"></div>
+
+      <div class="panel-head" style="margin-top:30px;">
+        <h2>04 &nbsp;Process metrics</h2>
+      </div>
+
+      <div class="table-scroll">
+        <table class="metrics-table" id="metricsTable">
+          <thead>
+            <tr>
+              <th>process</th>
+              <th>AT</th>
+              <th>BT</th>
+              <th class="priority-col hidden">priority</th>
+              <th>CT</th>
+              <th>TAT</th>
+              <th>WT</th>
+              <th>RT</th>
+            </tr>
+          </thead>
+          <tbody id="metricsTableBody"></tbody>
+          <tfoot id="metricsTableFoot"></tfoot>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer mono">FCFS &middot; SJF &middot; LJF &middot; SRTF &middot; Round&nbsp;Robin &middot; Priority (NP/P)</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
