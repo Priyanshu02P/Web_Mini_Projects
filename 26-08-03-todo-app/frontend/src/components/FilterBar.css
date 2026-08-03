@@ -1,0 +1,45 @@
+.filterbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filterbar__tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--umber-dark);
+  border: 1px solid var(--umber);
+  border-radius: var(--radius-md);
+  padding: 4px;
+}
+
+.filterbar__tab {
+  background: transparent;
+  border: none;
+  color: var(--parchment-dim);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.filterbar__tab--active,
+.filterbar__tab:hover {
+  background: var(--umber);
+  color: var(--parchment);
+}
+
+.filterbar__search {
+  background: var(--umber-dark);
+  border: 1px solid var(--umber);
+  border-radius: var(--radius-md);
+  color: var(--parchment);
+  padding: 10px 14px;
+  font-size: 13px;
+  min-width: 220px;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "description": "CLI to sign in and manage tasks against the Task Management API",
+  "main": "index.js",
+  "bin": {
+    "todo": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "commander": "^12.1.0"
+  }
+}

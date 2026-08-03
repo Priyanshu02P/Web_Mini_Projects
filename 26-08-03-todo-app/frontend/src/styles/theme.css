@@ -1,0 +1,33 @@
+/**
+ * Design tokens for the "Ledger" theme.
+ * Palette is fixed by the project brief - four tones, used with intent:
+ *   #000000 - true black, reserved for the deepest shadow / highest-contrast text
+ *   #1F150C - espresso, the app's base background
+ *   #412D15 - umber, panels / cards / borders / primary accent
+ *   #E1DCC9 - parchment, primary readable text + light surfaces
+ *
+ * Concept: an old leather ledger / journal. Tasks are entries; completing one
+ * is a stamp in the margin, not just a strikethrough.
+ */
+:root {
+  --black: #000000;
+  --espresso: #1f150c;
+  --umber: #412d15;
+  --parchment: #e1dcc9;
+
+  /* derived, same hues, for hover/disabled states - no new colors introduced */
+  --umber-light: #5a3f20;
+  --umber-dark: #2e1f0f;
+  --parchment-dim: #c9c3ac;
+  --danger: #a4402b; /* muted clay-red, kept close to the umber family */
+
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.35);
+}

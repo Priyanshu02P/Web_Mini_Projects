@@ -1,0 +1,56 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--umber);
+  background: linear-gradient(180deg, rgba(31, 21, 12, 0.9), rgba(31, 21, 12, 0.6));
+  backdrop-filter: blur(6px);
+}
+
+.navbar__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.navbar__mark {
+  font-size: 20px;
+  color: var(--parchment-dim);
+}
+
+.navbar__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--parchment);
+}
+
+.navbar__user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar__email {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--parchment-dim);
+}
+
+.navbar__logout {
+  background: transparent;
+  border: 1px solid var(--umber-light);
+  color: var(--parchment);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.navbar__logout:hover {
+  background: var(--umber);
+  border-color: var(--parchment-dim);
+}
