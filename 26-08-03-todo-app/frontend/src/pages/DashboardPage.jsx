@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [alert, setAlert] = useState({ visible: false, message: '', type: '' });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,19 +35,45 @@ export default function DashboardPage() {
     return () => clearTimeout(timeout);
   }, [load, query]);
 
+  const showAlert = (message, type) => {
+    setAlert({ visible: true, message, type });
+    // Automatically close the alert after 3 seconds
+    setTimeout(() => {
+      setAlert({ visible: false, message: '', type: '' });
+    }, 3000);
+  };
+
   async function handleCreate(payload) {
-    const created = await taskApi.createTask(payload);
-    setTasks((prev) => [created, ...prev]);
+    try{
+      const created = await taskApi.createTask(payload);
+      setTasks((prev) => [created, ...prev]);
+      showAlert('Saved successfully!', 'success');
+    }
+    catch (err){
+      showAlert(err.message, 'error');
+    }
   }
 
   async function handlePatch(id, changes) {
+    try{
     const updated = await taskApi.patchTask(id, changes);
     setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    showAlert('Updated successfully!', 'success');
+    }
+    catch (err){
+      showAlert(err.message, 'error');
+    }
   }
 
   async function handleDelete(id) {
-    await taskApi.deleteTask(id);
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+    try{
+      await taskApi.deleteTask(id);
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+      showAlert('Deleted successfully!', 'success');
+    }
+    catch (err){
+      showAlert(err.message, 'error');
+    }
   }
 
   const counts = useMemo(
@@ -59,6 +86,23 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard">
+      <div style={{ padding: '20px', position: 'relative' }}>
+      {/* Floating Alert Box */}
+      {alert.visible && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          padding: '15px 25px',
+          borderRadius: '5px',
+          color: '#fff',
+          backgroundColor: alert.type === 'error' ? '#ef4444' : '#22c55e',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          zIndex: 1000
+        }}>
+          {alert.message}
+        </div>
+      )}</div>
       <Navbar />
       <main className="dashboard__main">
         <div className="dashboard__header">

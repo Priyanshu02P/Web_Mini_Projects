@@ -5,6 +5,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 
+RUN npm install csv-writer
+
 COPY . .
 
 # Persisted JSON "database" lives here - mount a volume in docker-compose

@@ -1,5 +1,15 @@
 const taskService = require('../services/task.service');
+const { appendLog } = require('../services/log.service');
 
+function getIP(req){
+  const ip =
+    req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+    req.socket.remoteAddress ||
+    req.ip;
+
+    return ip;
+}
+  
 /**
  * Attaches a small set of hypermedia links to a task representation.
  * This is NOT required for Level 2, but it's a deliberate, minimal step
@@ -51,6 +61,8 @@ function create(req, res, next) {
       .status(201)
       .location(`/api/tasks/${task.id}`)
       .json({ data: withLinks(req, task) });
+
+    appendLog('GET', 'TASK CREATED', getIP(req));
   } catch (err) {
     next(err);
   }
@@ -68,6 +80,7 @@ function replace(req, res, next) {
 function patch(req, res, next) {
   try {
     const task = taskService.patchTask(req.user.id, req.params.id, req.body);
+    appendLog('PATCH', 'TASK UPDATED', getIP(req));
     res.status(200).json({ data: withLinks(req, task) });
   } catch (err) {
     next(err);
@@ -77,6 +90,7 @@ function patch(req, res, next) {
 function remove(req, res, next) {
   try {
     taskService.deleteTask(req.user.id, req.params.id);
+    appendLog('DELETE', 'TASK DELETED', getIP(req));
     res.status(204).send();
   } catch (err) {
     next(err);

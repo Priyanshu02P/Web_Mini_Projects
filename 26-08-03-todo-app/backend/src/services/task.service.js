@@ -3,6 +3,8 @@ const store = require('../data/store');
 const ApiError = require('../utils/apiError');
 const { TASK_STATUSES, TASK_PRIORITIES } = require('../config/constants');
 
+const { appendLog }= require("./log.service");
+
 function newId() {
   return crypto.randomBytes(8).toString('hex');
 }
