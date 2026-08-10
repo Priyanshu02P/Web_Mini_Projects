@@ -1,5 +1,3 @@
-const path = require('path');
-
 require('dotenv').config();
 
 module.exports = {
@@ -8,9 +6,9 @@ module.exports = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '12h',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
 
-  // Where runtime data (users + tasks) is persisted as JSON files.
-  // Mount this path as a volume in Docker to keep data between restarts.
-  DATA_DIR: process.env.DATA_DIR || path.join(__dirname, '..', '..', 'data-volume'),
+  // MongoDB connection string. In Docker Compose this points at the `mongo`
+  // service; locally it defaults to a MongoDB instance on localhost.
+  MONGO_URI: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/todo-app',
 
   // Fixed roster: this learning project supports exactly 5 users.
   MAX_USERS: 5,

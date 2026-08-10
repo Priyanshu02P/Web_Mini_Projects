@@ -1,18 +1,15 @@
-version: '3.9'
-
 services:
   backend:
     build: ./backend
     container_name: todo-backend
     ports:
-      - '4000:4000'
+      - "4000:4000"
     environment:
       PORT: 4000
       JWT_SECRET: learning-project-secret-change-me
       JWT_EXPIRES_IN: 12h
       CORS_ORIGIN: http://localhost:5173
-    volumes:
-      - todo-data:/app/data-volume
+      MONGO_URI: ${MONGO_URI}
     restart: unless-stopped
 
   frontend:
@@ -22,10 +19,8 @@ services:
         VITE_API_URL: http://localhost:4000
     container_name: todo-frontend
     ports:
-      - '5173:80'
+      - "5173:80"
     depends_on:
       - backend
     restart: unless-stopped
-
-volumes:
-  todo-data:
+   

@@ -1,15 +1,15 @@
 const taskService = require('../services/task.service');
 const { appendLog } = require('../services/log.service');
 
-function getIP(req){
+function getIP(req) {
   const ip =
     req.headers['x-forwarded-for']?.split(',')[0].trim() ||
     req.socket.remoteAddress ||
     req.ip;
 
-    return ip;
+  return ip;
 }
-  
+
 /**
  * Attaches a small set of hypermedia links to a task representation.
  * This is NOT required for Level 2, but it's a deliberate, minimal step
@@ -29,9 +29,9 @@ function withLinks(req, task) {
   };
 }
 
-function list(req, res, next) {
+async function list(req, res, next) {
   try {
-    const { data, meta } = taskService.listTasks(req.user.id, req.query);
+    const { data, meta } = await taskService.listTasks(req.user.id, req.query);
     res.status(200).json({
       data: data.map((t) => withLinks(req, t)),
       meta,
@@ -45,41 +45,41 @@ function list(req, res, next) {
   }
 }
 
-function getOne(req, res, next) {
+async function getOne(req, res, next) {
   try {
-    const task = taskService.getTask(req.user.id, req.params.id);
+    const task = await taskService.getTask(req.user.id, req.params.id);
     res.status(200).json({ data: withLinks(req, task) });
   } catch (err) {
     next(err);
   }
 }
 
-function create(req, res, next) {
+async function create(req, res, next) {
   try {
-    const task = taskService.createTask(req.user.id, req.body);
+    const task = await taskService.createTask(req.user.id, req.body);
     res
       .status(201)
       .location(`/api/tasks/${task.id}`)
       .json({ data: withLinks(req, task) });
 
-    appendLog('GET', 'TASK CREATED', getIP(req));
+    appendLog('POST', 'TASK CREATED', getIP(req));
   } catch (err) {
     next(err);
   }
 }
 
-function replace(req, res, next) {
+async function replace(req, res, next) {
   try {
-    const task = taskService.replaceTask(req.user.id, req.params.id, req.body);
+    const task = await taskService.replaceTask(req.user.id, req.params.id, req.body);
     res.status(200).json({ data: withLinks(req, task) });
   } catch (err) {
     next(err);
   }
 }
 
-function patch(req, res, next) {
+async function patch(req, res, next) {
   try {
-    const task = taskService.patchTask(req.user.id, req.params.id, req.body);
+    const task = await taskService.patchTask(req.user.id, req.params.id, req.body);
     appendLog('PATCH', 'TASK UPDATED', getIP(req));
     res.status(200).json({ data: withLinks(req, task) });
   } catch (err) {
@@ -87,9 +87,9 @@ function patch(req, res, next) {
   }
 }
 
-function remove(req, res, next) {
+async function remove(req, res, next) {
   try {
-    taskService.deleteTask(req.user.id, req.params.id);
+    await taskService.deleteTask(req.user.id, req.params.id);
     appendLog('DELETE', 'TASK DELETED', getIP(req));
     res.status(204).send();
   } catch (err) {

@@ -2,8 +2,8 @@
 
 A small full-stack task management (to-do list) app:
 
-- **Backend**: Node.js + Express REST API, JSON-file persistence, JWT sessions, 5 fixed
-  demo users, plain email/password auth (no hashing — see [Auth](#auth) below).
+- **Backend**: Node.js + Express REST API, MongoDB persistence (Mongoose), JWT sessions,
+  5 fixed demo users, plain email/password auth (no hashing — see [Auth](#auth) below).
 - **Frontend**: React (Vite), warm ledger/journal-themed UI.
 - **CLI**: Node CLI to sign in and manage tasks from the terminal.
 - **Docker**: Dockerfile per service + a `docker-compose.yml` to run everything together.
@@ -32,6 +32,13 @@ docker compose up --build
 - Backend:  http://localhost:4000/api/health
 
 ## Quick start (manual, no Docker)
+
+**Prerequisite: MongoDB running locally** (or a `MONGO_URI` pointing at a remote instance,
+e.g. MongoDB Atlas). Easiest local option:
+
+```bash
+docker run -d --name todo-mongo -p 27017:27017 mongo:7
+```
 
 **Backend**
 
@@ -74,7 +81,7 @@ node index.js list
 
 This project intentionally uses the simplest possible auth:
 
-- 5 hardcoded users, seeded to a local JSON file (`backend/data-volume/users.json`).
+- 5 hardcoded users, seeded into MongoDB (`npm run seed`).
 - Passwords are stored and compared **in plain text** — no hashing, no salting.
 - On successful login, the API issues a JWT (`backend/src/utils/jwt.js`) that the client
   sends back as `Authorization: Bearer <token>` on every subsequent request.
@@ -115,8 +122,24 @@ The UI is built strictly from this fixed palette (a "ledger/journal" theme):
 
 ## Notes on data persistence
 
-There's no real database — `backend/src/data/store.js` reads/writes two JSON files
-(`users.json`, `tasks.json`) under `backend/data-volume/`. In Docker this directory is a
-named volume (`todo-data`) so data survives container restarts. This keeps the project
-dependency-free and easy to read end-to-end; swapping in a real database later only means
-rewriting `store.js` — controllers and services never touch the filesystem directly.
+Data is stored in **MongoDB** via Mongoose (`backend/src/models/`). Controllers and
+services only ever call model methods — no raw driver calls scattered around the
+codebase. In Docker, MongoDB runs as its own `mongo` service with a named volume
+(`todo-mongo-data`) so data survives container restarts. Locally, point `MONGO_URI` in
+`backend/.env` at any MongoDB instance (local, Docker, or Atlas).
+
+Validation (required fields, the `status`/`priority` enums, etc.) lives on the Mongoose
+schemas themselves (`backend/src/models/task.model.js`). A pre-`save` hook trims
+whitespace from `title` before it's persisted. Raw Mongoose errors (`ValidationError`,
+`CastError`, duplicate-key errors) are never sent to the client as-is — they're caught
+centrally in `backend/src/middleware/error.middleware.js` and reshaped into the same
+`{ error: { status, message, details } }` JSON envelope used everywhere else in the API.
+
+### Testing with Postman
+
+A ready-to-import collection is included at `backend/postman_collection.json`. It covers
+login, and full CRUD on `/api/tasks` (create, list, get-by-id, update, patch, delete),
+plus negative cases: missing title, invalid `priority`, and a GET on a nonexistent ID
+(expects a `404` JSON body). Import it into Postman, set the collection variable
+`baseUrl` (defaults to `http://localhost:4000/api`), run **Login** first to capture a
+token into `{{token}}`, then run the rest of the requests.

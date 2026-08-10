@@ -1,0 +1,396 @@
+{
+  "info": {
+    "name": "Todo API (MongoDB)",
+    "description": "CRUD + validation tests for the MongoDB-backed Task Manager API. Run 'Login' first to populate {{token}}, then 'Create Task' to populate {{taskId}} for the rest.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api" },
+    { "key": "token", "value": "" },
+    { "key": "taskId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('returns a token', () => pm.expect(body.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('token', body.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user1@todo.local\",\n  \"password\": \"password1\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login - wrong password (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test('structured error JSON', () => {",
+                  "  pm.expect(body.error).to.be.an('object');",
+                  "  pm.expect(body.error.status).to.eql(401);",
+                  "  pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user1@todo.local\",\n  \"password\": \"not-the-password\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks - CRUD",
+      "item": [
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('task has id, default priority/status', () => {",
+                  "  pm.expect(body.data.id).to.be.a('string');",
+                  "  pm.expect(body.data.priority).to.eql('medium');",
+                  "  pm.expect(body.data.status).to.eql('pending');",
+                  "});",
+                  "pm.test('title is trimmed by pre-save hook', () => {",
+                  "  pm.expect(body.data.title).to.eql('Buy milk');",
+                  "});",
+                  "pm.collectionVariables.set('taskId', body.data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"   Buy milk   \",\n  \"description\": \"2% please\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "List Tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('data is an array with meta', () => {",
+                  "  pm.expect(body.data).to.be.an('array');",
+                  "  pm.expect(body.meta.total).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "Get Task by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('returns the created task', () => pm.expect(body.data.id).to.eql(pm.collectionVariables.get('taskId')));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/tasks/{{taskId}}", "host": ["{{baseUrl}}"], "path": ["tasks", "{{taskId}}"] }
+          }
+        },
+        {
+          "name": "Update Task (PUT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('fields replaced', () => {",
+                  "  pm.expect(body.data.title).to.eql('Buy oat milk');",
+                  "  pm.expect(body.data.priority).to.eql('low');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Buy oat milk\",\n  \"description\": \"the good kind\",\n  \"status\": \"in-progress\",\n  \"priority\": \"low\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks/{{taskId}}", "host": ["{{baseUrl}}"], "path": ["tasks", "{{taskId}}"] }
+          }
+        },
+        {
+          "name": "Patch Task (status only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('status updated, title untouched', () => {",
+                  "  pm.expect(body.data.status).to.eql('completed');",
+                  "  pm.expect(body.data.title).to.eql('Buy oat milk');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"completed\"\n}" },
+            "url": { "raw": "{{baseUrl}}/tasks/{{taskId}}", "host": ["{{baseUrl}}"], "path": ["tasks", "{{taskId}}"] }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('status is 204', () => pm.response.to.have.status(204));"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/tasks/{{taskId}}", "host": ["{{baseUrl}}"], "path": ["tasks", "{{taskId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks - Validation & Error Cases",
+      "item": [
+        {
+          "name": "Create Task - missing title (400, structured)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('structured JSON, not raw Mongoose error', () => {",
+                  "  pm.expect(body.error).to.be.an('object');",
+                  "  pm.expect(body.error.status).to.eql(400);",
+                  "  pm.expect(body.error.message).to.be.a('string');",
+                  "  pm.expect(body.error).to.not.have.property('errors');",
+                  "  pm.expect(body.error).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('details array has field-level messages', () => {",
+                  "  pm.expect(body.error.details).to.be.an('array');",
+                  "  pm.expect(body.error.details[0]).to.have.property('field');",
+                  "  pm.expect(body.error.details[0]).to.have.property('message');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"no title provided\"\n}" },
+            "url": { "raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "Create Task - invalid priority (400, structured)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('structured JSON, not raw Mongoose error', () => {",
+                  "  pm.expect(body.error).to.be.an('object');",
+                  "  pm.expect(body.error).to.not.have.property('errors');",
+                  "  pm.expect(body.error).to.not.have.property('stack');",
+                  "});",
+                  "pm.test('mentions enum values', () => {",
+                  "  const msg = JSON.stringify(body.error);",
+                  "  pm.expect(msg).to.include('low');",
+                  "  pm.expect(msg).to.include('medium');",
+                  "  pm.expect(msg).to.include('high');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bad priority test\",\n  \"priority\": \"urgent\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"] }
+          }
+        },
+        {
+          "name": "Get Task - nonexistent valid ObjectId (404, structured)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test('structured JSON 404', () => {",
+                  "  pm.expect(body.error.status).to.eql(404);",
+                  "  pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/64b000000000000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "64b000000000000000000000"]
+            }
+          }
+        },
+        {
+          "name": "Get Task - malformed ID (404, structured)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test('structured JSON, no raw CastError leaked', () => {",
+                  "  pm.expect(body.error.status).to.eql(404);",
+                  "  pm.expect(body.error).to.not.have.property('stack');",
+                  "  pm.expect(body.error).to.not.have.property('kind');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/not-a-valid-object-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "not-a-valid-object-id"]
+            }
+          }
+        },
+        {
+          "name": "No auth header (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('status is 401', () => pm.response.to.have.status(401));"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/tasks", "host": ["{{baseUrl}}"], "path": ["tasks"] }
+          }
+        }
+      ]
+    }
+  ]
+}

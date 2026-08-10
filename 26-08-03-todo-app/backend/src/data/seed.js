@@ -1,12 +1,33 @@
 /**
- * Run with `npm run seed` to (re)create the data-volume files from scratch,
- * restoring the 5 default users and clearing all tasks.
+ * Run with `npm run seed` to (re)create the database from scratch:
+ * restores the 5 default users and clears all tasks.
  */
-const store = require('./store');
+const mongoose = require('mongoose');
+const connectDB = require('../config/db');
+const User = require('../models/user.model');
+const Task = require('../models/task.model');
+const { MAX_USERS } = require('../config/constants');
 
-store.init();
-store.saveUsers(store.DEFAULT_USERS);
-store.saveTasks([]);
+const DEFAULT_USERS = Array.from({ length: MAX_USERS }, (_, i) => ({
+  name: `User ${i + 1}`,
+  email: `user${i + 1}@todo.local`,
+  password: `password${i + 1}`,
+}));
 
-console.log(`Seeded ${store.DEFAULT_USERS.length} users:`);
-store.DEFAULT_USERS.forEach((u) => console.log(`  - ${u.email} / ${u.password}`));
+async function seed() {
+  await connectDB();
+
+  await Task.deleteMany({});
+  await User.deleteMany({});
+  const created = await User.insertMany(DEFAULT_USERS);
+
+  console.log(`Seeded ${created.length} users (tasks cleared):`);
+  DEFAULT_USERS.forEach((u) => console.log(`  - ${u.email} / ${u.password}`));
+
+  await mongoose.disconnect();
+}
+
+seed().catch((err) => {
+  console.error('Seed failed:', err);
+  process.exit(1);
+});

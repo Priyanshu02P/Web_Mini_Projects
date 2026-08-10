@@ -1,4 +1,5 @@
-const store = require('../data/store');
+const mongoose = require('mongoose');
+const User = require('../models/user.model');
 const { signToken } = require('../utils/jwt');
 const ApiError = require('../utils/apiError');
 
@@ -7,13 +8,12 @@ const ApiError = require('../utils/apiError');
  * This is a deliberate, documented simplification for a learning project
  * (see MATURITY.md / README "Auth" section). Never do this in production.
  */
-function login(email, password) {
+async function login(email, password) {
   if (!email || !password) {
     throw ApiError.badRequest('email and password are required');
   }
 
-  const users = store.getUsers();
-  const user = users.find((u) => u.email.toLowerCase() === String(email).toLowerCase());
+  const user = await User.findOne({ email: String(email).toLowerCase() }).select('+password');
 
   if (!user || user.password !== password) {
     throw ApiError.unauthorized('Invalid email or password');
@@ -26,8 +26,11 @@ function login(email, password) {
   };
 }
 
-function getUserById(id) {
-  const user = store.getUsers().find((u) => u.id === id);
+async function getUserById(id) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw ApiError.notFound('User not found');
+  }
+  const user = await User.findById(id);
   if (!user) throw ApiError.notFound('User not found');
   return { id: user.id, name: user.name, email: user.email };
 }

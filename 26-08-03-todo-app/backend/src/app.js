@@ -5,9 +5,6 @@ const morgan = require('morgan');
 const routes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware');
 const { CORS_ORIGIN } = require('./config/constants');
-const store = require('./data/store');
-
-store.init();
 
 const app = express();
 
