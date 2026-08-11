@@ -10,6 +10,8 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState([]);
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 5, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [alert, setAlert] = useState({ visible: false, message: '', type: '' });
@@ -18,22 +20,33 @@ export default function DashboardPage() {
     setLoading(true);
     setError('');
     try {
-      const params = { limit: 100 };
+      const params = { limit: 5, page };
       if (status !== 'all') params.status = status;
       if (query) params.q = query;
-      const { data } = await taskApi.listTasks(params);
-      setTasks(data);
+      const response = await taskApi.listTasks(params);
+      setTasks(response.data);
+      setMeta(response.meta);
     } catch (err) {
       setError('Could not load tasks. Is the API running?');
     } finally {
       setLoading(false);
     }
-  }, [status, query]);
+  }, [status, query, page]);
 
   useEffect(() => {
     const timeout = setTimeout(load, query ? 250 : 0); // light debounce for search
     return () => clearTimeout(timeout);
   }, [load, query]);
+
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    setPage(1);
+  };
+
+  const handleQueryChange = (newQuery) => {
+    setQuery(newQuery);
+    setPage(1);
+  };
 
   const showAlert = (message, type) => {
     setAlert({ visible: true, message, type });
@@ -45,9 +58,13 @@ export default function DashboardPage() {
 
   async function handleCreate(payload) {
     try{
-      const created = await taskApi.createTask(payload);
-      setTasks((prev) => [created, ...prev]);
+      await taskApi.createTask(payload);
       showAlert('Saved successfully!', 'success');
+      if (page !== 1) {
+        setPage(1);
+      } else {
+        load();
+      }
     }
     catch (err){
       showAlert(err.message, 'error');
@@ -56,9 +73,9 @@ export default function DashboardPage() {
 
   async function handlePatch(id, changes) {
     try{
-    const updated = await taskApi.patchTask(id, changes);
-    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
-    showAlert('Updated successfully!', 'success');
+      const updated = await taskApi.patchTask(id, changes);
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      showAlert('Updated successfully!', 'success');
     }
     catch (err){
       showAlert(err.message, 'error');
@@ -68,8 +85,12 @@ export default function DashboardPage() {
   async function handleDelete(id) {
     try{
       await taskApi.deleteTask(id);
-      setTasks((prev) => prev.filter((t) => t.id !== id));
       showAlert('Deleted successfully!', 'success');
+      if (page > 1 && tasks.length === 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        load();
+      }
     }
     catch (err){
       showAlert(err.message, 'error');
@@ -108,18 +129,44 @@ export default function DashboardPage() {
         <div className="dashboard__header">
           <h1 className="dashboard__title">Today's Page</h1>
           <p className="dashboard__count">
-            {counts.done} of {counts.total} entries closed
+            {Math.min(page * 5, meta.total)} of {meta.total} entries
           </p>
         </div>
 
         <TaskForm onCreate={handleCreate} />
-        <FilterBar status={status} onStatusChange={setStatus} query={query} onQueryChange={setQuery} />
+        <FilterBar status={status} onStatusChange={handleStatusChange} query={query} onQueryChange={handleQueryChange} />
 
         {error && <p className="dashboard__error">{error}</p>}
         {loading ? (
           <p className="dashboard__loading">Loading entries…</p>
         ) : (
-          <TaskList tasks={tasks} onPatch={handlePatch} onDelete={handleDelete} />
+          <>
+            <TaskList tasks={tasks} onPatch={handlePatch} onDelete={handleDelete} />
+            
+            {meta.totalPages > 1 && (
+              <div className="dashboard__pagination">
+                <button
+                  type="button"
+                  className="dashboard__pagination-btn"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  ← Previous
+                </button>
+                <span className="dashboard__pagination-info">
+                  Page {meta.page} of {meta.totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="dashboard__pagination-btn"
+                  disabled={page === meta.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

@@ -39,3 +39,41 @@
   color: var(--parchment-dim);
   font-size: 13px;
 }
+
+.dashboard__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--umber);
+}
+
+.dashboard__pagination-btn {
+  background: transparent;
+  border: 1px solid var(--umber);
+  border-radius: var(--radius-sm);
+  color: var(--parchment);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dashboard__pagination-btn:hover:not(:disabled) {
+  background: var(--umber-light);
+  border-color: var(--parchment-dim);
+}
+
+.dashboard__pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dashboard__pagination-info {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--parchment-dim);
+}
