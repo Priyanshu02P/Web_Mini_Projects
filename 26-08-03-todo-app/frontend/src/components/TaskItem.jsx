@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import './TaskItem.css';
-import DeleteConfirmModal from './DeleteConfirmModal';
+import lazyWithMinDelay from '../utils/lazyWithMinDelay';
+
+// Loaded on first use only; no artificial delay for a small modal.
+const DeleteConfirmModal = lazyWithMinDelay(() => import('./DeleteConfirmModal'), 0);
 
 const PRIORITY_LABEL = {
   low: 'Low',
@@ -141,10 +144,12 @@ export default function TaskItem({ task, onPatch, onDelete }) {
       </li>
 
       {showDeleteConfirm && (
-        <DeleteConfirmModal
-          onCancel={() => setShowDeleteConfirm(false)}
-          onConfirm={confirmDelete}
-        />
+        <Suspense fallback={null}>
+          <DeleteConfirmModal
+            onCancel={() => setShowDeleteConfirm(false)}
+            onConfirm={confirmDelete}
+          />
+        </Suspense>
       )}
     </>
   );

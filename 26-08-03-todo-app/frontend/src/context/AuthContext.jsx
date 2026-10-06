@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as authApi from '../api/authApi';
+import { clearCache } from '../api/cache';
 
 const AuthContext = createContext(null);
 
@@ -32,12 +33,14 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     const { token, user: loggedInUser } = await authApi.login(email, password);
+    clearCache(); // never show a previous user's cached data
     localStorage.setItem('todo_token', token);
     localStorage.setItem('todo_user', JSON.stringify(loggedInUser));
     setUser(loggedInUser);
   }
 
   function logout() {
+    clearCache();
     localStorage.removeItem('todo_token');
     localStorage.removeItem('todo_user');
     setUser(null);

@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import FilterBar from '../components/FilterBar';
 import TaskForm from '../components/TaskForm';
 import TaskList from '../components/TaskList';
+import CacheStats from '../components/CacheStats';
 import * as taskApi from '../api/taskApi';
 import './DashboardPage.css';
 
@@ -135,6 +136,8 @@ export default function DashboardPage() {
 
         <TaskForm onCreate={handleCreate} />
         <FilterBar status={status} onStatusChange={handleStatusChange} query={query} onQueryChange={handleQueryChange} />
+
+        <CacheStats />
 
         {error && <p className="dashboard__error">{error}</p>}
         {loading ? (

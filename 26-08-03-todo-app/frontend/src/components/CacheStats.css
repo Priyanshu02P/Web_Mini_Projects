@@ -1,0 +1,15 @@
+.cachestats {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--parchment-dim);
+  margin: 0 0 12px;
+  text-align: right;
+}
+
+.cachestats__hit {
+  color: #22c55e;
+}
+
+.cachestats__miss {
+  color: #f59e0b;
+}
