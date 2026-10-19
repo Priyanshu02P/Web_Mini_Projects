@@ -3,3 +3,8 @@ dist/
 .env
 backend/data-volume/
 .DS_Store
+
+
+.postman/
+postman/
+Todo API (MongoDB)/

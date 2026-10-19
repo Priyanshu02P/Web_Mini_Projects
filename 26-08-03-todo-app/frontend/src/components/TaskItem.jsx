@@ -5,6 +5,14 @@ import lazyWithMinDelay from '../utils/lazyWithMinDelay';
 // Loaded on first use only; no artificial delay for a small modal.
 const DeleteConfirmModal = lazyWithMinDelay(() => import('./DeleteConfirmModal'), 0);
 
+// ISO -> value for <input type="datetime-local"> (local time, no seconds)
+function toLocalInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const PRIORITY_LABEL = {
   low: 'Low',
   medium: 'Medium',
@@ -17,6 +25,7 @@ export default function TaskItem({ task, onPatch, onDelete }) {
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');
+  const [remindAt, setRemindAt] = useState(toLocalInput(task.remindAt));
 
   const completed = task.status === 'completed';
 
@@ -29,10 +38,13 @@ export default function TaskItem({ task, onPatch, onDelete }) {
   function saveEdit() {
     if (!title.trim()) return;
 
-    onPatch(task.id, {
-      title: title.trim(),
-      description,
-    });
+    const changes = { title: title.trim(), description };
+    // Only send remindAt when the user actually changed it, so saving an
+    // unrelated edit can't reset (and re-fire) an existing reminder.
+    if (remindAt !== toLocalInput(task.remindAt)) {
+      changes.remindAt = remindAt ? new Date(remindAt).toISOString() : null;
+    }
+    onPatch(task.id, changes);
 
     setEditing(false);
   }
@@ -41,6 +53,7 @@ export default function TaskItem({ task, onPatch, onDelete }) {
     setEditing(false);
     setTitle(task.title);
     setDescription(task.description || '');
+    setRemindAt(toLocalInput(task.remindAt));
   }
 
   function confirmDelete() {
@@ -83,6 +96,15 @@ export default function TaskItem({ task, onPatch, onDelete }) {
                 placeholder="Details (optional)"
               />
 
+              <label className="taskitem__remind-edit">
+                Remind me
+                <input
+                  type="datetime-local"
+                  value={remindAt}
+                  onChange={(e) => setRemindAt(e.target.value)}
+                />
+              </label>
+
               <div className="taskitem__edit-actions">
                 <button
                   type="button"
@@ -122,6 +144,12 @@ export default function TaskItem({ task, onPatch, onDelete }) {
                 >
                   {PRIORITY_LABEL[task.priority]}
                 </span>
+
+                {task.remindAt && (
+                  <span className="taskitem__due" title={new Date(task.remindAt).toLocaleString()}>
+                    {task.reminderFiredAt ? '🔔 Reminded' : `🔔 ${new Date(task.remindAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`}
+                  </span>
+                )}
 
                 {task.dueDate && (
                   <span className="taskitem__due">

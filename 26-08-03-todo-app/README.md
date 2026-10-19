@@ -14,7 +14,7 @@ See [`MATURITY.md`](./MATURITY.md) for the Richardson Maturity Model evaluation 
 
 ```
 todo-app/
-├── backend/     Express REST API
+├── backend/     Express REST API (+ src/events: async event bus, reminders, analytics)
 ├── frontend/    React SPA (Vite)
 ├── cli/         Terminal client (sign-in + task management)
 ├── docker-compose.yml
@@ -46,9 +46,19 @@ docker run -d --name todo-mongo -p 27017:27017 mongo:7
 cd backend
 cp .env.example .env
 npm install
-npm run seed     # (re)creates the 5 demo users
+npm run seed     # resets demo data; creates 5 users, sample tasks, and analytics
 npm run dev       # http://localhost:4000
 ```
+
+For the Docker setup, start the services first and run the seed inside the backend container:
+
+```bash
+docker compose up -d --build
+docker compose exec backend npm run seed
+```
+
+The seed resets users, tasks, reminders, and analytics, then creates sample tasks and daily
+analytics rollups so the dashboard is populated immediately. **It deletes existing task data.**
 
 **Frontend**
 
@@ -104,10 +114,49 @@ anything handling real user data.
 | PUT | `/api/tasks/:id` | Yes | Full update |
 | PATCH | `/api/tasks/:id` | Yes | Partial update (e.g. change status only) |
 | DELETE | `/api/tasks/:id` | Yes | Delete a task |
+| GET | `/api/reminders` | Yes | Fired reminders (`?unread=true`, `?limit=`) |
+| PATCH | `/api/reminders/:id` | Yes | Mark one reminder read |
+| POST | `/api/reminders/read-all` | Yes | Mark all reminders read |
+| GET | `/api/analytics/productivity` | Yes | Productivity analytics (`?days=1..30`, default 7) |
+| GET | `/api/events/stream?token=<jwt>` | Token in query | Server-Sent Events: `reminder`, `analytics` |
+
+Tasks also accept an optional `remindAt` (ISO date-time) on `POST`/`PUT`/`PATCH`.
 
 All routes are namespaced under `/api`, return JSON, and use standard HTTP status codes
 (`200`, `201`, `204`, `400`, `401`, `403`, `404`, `500`) — see `MATURITY.md` for the full
 rationale.
+
+## Asynchronous reminders & analytics (event-driven)
+
+Reminders and productivity analytics run **off the request path** using an in-process,
+event-driven design (`backend/src/events/`):
+
+```
+ task.service ──publish──▶ eventBus (async queue, retries, dead-letter)
+                              │
+        ┌─────────────────────┼──────────────────────┐
+        ▼                     ▼                      ▼
+ reminder handlers     analytics handlers     notification handler
+ (sync timers, deliver (atomic $inc into      (SSE "analytics" hint)
+  reminder, SSE push)   DailyStat rollups)
+```
+
+- **Events**: `task.created / updated / completed / reopened / deleted`,
+  `reminder.scheduled / due`, `analytics.updated` (`events/eventTypes.js`).
+- **Event bus**: `publish()` returns immediately; handlers run later with capped
+  concurrency, 3 attempts with exponential backoff, then a dead-letter list.
+- **Reminders**: set `remindAt` on a task. One timer per pending reminder (no polling);
+  `REMINDER_DUE` creates a `Reminder` document, marks the task, and pushes it to the browser
+  over SSE (bell icon, toast, optional desktop notification). Timers are re-armed from MongoDB
+  on startup, and delivery is claimed atomically so a reminder fires once.
+- **Analytics**: handlers maintain per-day counters (created, completed, reopened, deleted,
+  reminders fired, completion time). `GET /api/analytics/productivity` reads those rollups plus
+  live overdue/upcoming counts: completion rate, streak, average time to finish, 7-day chart.
+  The dashboard refreshes itself when the server pushes an `analytics` event.
+- **Limits (by design for a learning project)**: the bus and timers live in one Node process,
+  so run a single backend instance. To scale out, keep the `publish`/`subscribe` API and back it
+  with Redis Streams / BullMQ / RabbitMQ. Analytics days are UTC. The SSE endpoint takes the JWT
+  as a query parameter because `EventSource` can't send headers.
 
 ## Color palette
 

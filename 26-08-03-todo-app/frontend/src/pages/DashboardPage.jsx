@@ -4,6 +4,10 @@ import FilterBar from '../components/FilterBar';
 import TaskForm from '../components/TaskForm';
 import TaskList from '../components/TaskList';
 import CacheStats from '../components/CacheStats';
+import AnalyticsPanel from '../components/AnalyticsPanel';
+import useEventStream from '../hooks/useEventStream';
+import * as reminderApi from '../api/reminderApi';
+import { invalidate } from '../api/cache';
 import * as taskApi from '../api/taskApi';
 import './DashboardPage.css';
 
@@ -16,6 +20,63 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [alert, setAlert] = useState({ visible: false, message: '', type: '' });
+
+  // --- Event-driven push: reminders + analytics refresh hints (SSE) ---------
+  const [reminders, setReminders] = useState([]);
+  const [unread, setUnread] = useState(0);
+  const [analyticsTick, setAnalyticsTick] = useState(0);
+
+  useEffect(() => {
+    reminderApi
+      .listReminders({ limit: 20 })
+      .then((res) => {
+        setReminders(res.data);
+        setUnread(res.meta.unread);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEventStream({
+    reminder: (reminder) => {
+      if (!reminder) return;
+      setReminders((prev) => [reminder, ...prev.filter((r) => r.id !== reminder.id)].slice(0, 20));
+      setUnread((n) => n + 1);
+      showAlert(`🔔 ${reminder.message}`, 'success');
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new Notification('Ledger reminder', { body: reminder.message });
+      }
+      // The task's "Reminded" badge comes from the server; refresh the list.
+      invalidateTasks();
+    },
+    analytics: () => setAnalyticsTick((n) => n + 1),
+  });
+
+  // Drop the 60s client cache and reload so the task shows its "Reminded" badge.
+  function invalidateTasks() {
+    invalidate('tasks:');
+    invalidate('task:');
+    load();
+  }
+
+  async function handleReadReminder(id) {
+    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, read: true } : r)));
+    setUnread((n) => Math.max(n - 1, 0));
+    try {
+      await reminderApi.markReminderRead(id);
+    } catch {
+      /* next fetch will reconcile */
+    }
+  }
+
+  async function handleReadAllReminders() {
+    setReminders((prev) => prev.map((r) => ({ ...r, read: true })));
+    setUnread(0);
+    try {
+      await reminderApi.markAllRemindersRead();
+    } catch {
+      /* next fetch will reconcile */
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,14 +122,18 @@ export default function DashboardPage() {
     try{
       await taskApi.createTask(payload);
       showAlert('Saved successfully!', 'success');
+      invalidate('tasks:');
       if (page !== 1) {
         setPage(1);
       } else {
-        load();
+        await load();
       }
+      setAnalyticsTick((n) => n + 1);
+      return true;
     }
     catch (err){
-      showAlert(err.message, 'error');
+      showAlert(err.response?.data?.error?.message || err.message || 'Could not save task.', 'error');
+      return false;
     }
   }
 
@@ -125,7 +190,12 @@ export default function DashboardPage() {
           {alert.message}
         </div>
       )}</div>
-      <Navbar />
+      <Navbar
+        reminders={reminders}
+        unread={unread}
+        onReadReminder={handleReadReminder}
+        onReadAllReminders={handleReadAllReminders}
+      />
       <main className="dashboard__main">
         <div className="dashboard__header">
           <h1 className="dashboard__title">Today's Page</h1>
@@ -133,6 +203,8 @@ export default function DashboardPage() {
             {Math.min(page * 5, meta.total)} of {meta.total} entries
           </p>
         </div>
+
+        <AnalyticsPanel refreshKey={analyticsTick} />
 
         <TaskForm onCreate={handleCreate} />
         <FilterBar status={status} onStatusChange={handleStatusChange} query={query} onQueryChange={handleQueryChange} />

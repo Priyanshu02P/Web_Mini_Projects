@@ -1,4 +1,19 @@
 services:
+  mongo:
+    image: mongo:7
+    container_name: todo-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: todo-app
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet",  "admin", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   backend:
     build: ./backend
     container_name: todo-backend
@@ -6,10 +21,13 @@ services:
       - "4000:4000"
     environment:
       PORT: 4000
-      JWT_SECRET: learning-project-secret-change-me
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_EXPIRES_IN: 12h
       CORS_ORIGIN: http://localhost:5173
-      MONGO_URI: ${MONGO_URI}
+      MONGO_URI: ${MONGO_URI}      
+    depends_on:
+      mongo:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -23,4 +41,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-   
+
+volumes:
+  mongo_data:

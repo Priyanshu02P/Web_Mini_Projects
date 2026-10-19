@@ -2,6 +2,34 @@ const mongoose = require('mongoose');
 const Task = require('../models/task.model');
 const ApiError = require('../utils/apiError');
 const { TASK_STATUSES, TASK_PRIORITIES } = require('../config/constants');
+const eventBus = require('../events/eventBus');
+const EVENTS = require('../events/eventTypes');
+
+/**
+ * Keeps completedAt in step with status, and clears reminderFiredAt whenever
+ * remindAt is changed so a rescheduled reminder can fire again.
+ */
+function applyDerivedFields(doc, { previousStatus, previousRemindAt } = {}) {
+  if (doc.status === 'completed' && previousStatus !== 'completed') {
+    doc.completedAt = new Date();
+  } else if (doc.status !== 'completed' && doc.completedAt) {
+    doc.completedAt = null;
+  }
+
+  const prev = previousRemindAt ? new Date(previousRemindAt).getTime() : null;
+  const next = doc.remindAt ? new Date(doc.remindAt).getTime() : null;
+  if (prev !== next) doc.reminderFiredAt = null;
+}
+
+/** Publishes the right lifecycle events. Never awaited: this is async by design. */
+function publishChange(task, { previousStatus, previousCompletedAt, changes }) {
+  eventBus.publish(EVENTS.TASK_UPDATED, { task, changes });
+  if (task.status === 'completed' && previousStatus !== 'completed') {
+    eventBus.publish(EVENTS.TASK_COMPLETED, { task });
+  } else if (task.status !== 'completed' && previousStatus === 'completed') {
+    eventBus.publish(EVENTS.TASK_REOPENED, { task, previousCompletedAt });
+  }
+}
 
 function validateStatus(status) {
   if (status !== undefined && !TASK_STATUSES.includes(status)) {
@@ -88,32 +116,60 @@ async function getTask(userId, taskId) {
 }
 
 async function createTask(userId, payload) {
-  const { title, description = '', status = 'pending', priority = 'medium', dueDate = null } =
-    payload || {};
+  const {
+    title,
+    description = '',
+    status = 'pending',
+    priority = 'medium',
+    dueDate = null,
+    remindAt = null,
+  } = payload || {};
 
-  const task = new Task({ userId, title, description, status, priority, dueDate });
+  const task = new Task({ userId, title, description, status, priority, dueDate, remindAt });
+  applyDerivedFields(task);
   await task.save(); // triggers schema validation + the title-trim pre-save hook
-  return task.toJSON();
+
+  const json = task.toJSON();
+  eventBus.publish(EVENTS.TASK_CREATED, { task: json });
+  if (json.status === 'completed') eventBus.publish(EVENTS.TASK_COMPLETED, { task: json });
+  return json;
 }
 
 async function replaceTask(userId, taskId, payload) {
   // PUT = full replacement of the editable fields.
   assertValidId(taskId);
-  const { title, description = '', status = 'pending', priority = 'medium', dueDate = null } =
-    payload || {};
+  const {
+    title,
+    description = '',
+    status = 'pending',
+    priority = 'medium',
+    dueDate = null,
+    remindAt = null,
+  } = payload || {};
 
   const existing = await Task.findById(taskId);
   if (!existing) throw ApiError.notFound('Task not found');
   if (existing.userId.toString() !== userId) throw ApiError.forbidden('This task belongs to another user');
+
+  const before = {
+    previousStatus: existing.status,
+    previousCompletedAt: existing.completedAt,
+    previousRemindAt: existing.remindAt,
+  };
 
   existing.title = title;
   existing.description = description;
   existing.status = status;
   existing.priority = priority;
   existing.dueDate = dueDate;
+  existing.remindAt = remindAt;
+  applyDerivedFields(existing, before);
 
   await existing.save();
-  return existing.toJSON();
+
+  const json = existing.toJSON();
+  publishChange(json, { ...before, changes: { replaced: true } });
+  return json;
 }
 
 async function patchTask(userId, taskId, changes = {}) {
@@ -124,13 +180,27 @@ async function patchTask(userId, taskId, changes = {}) {
   if (!existing) throw ApiError.notFound('Task not found');
   if (existing.userId.toString() !== userId) throw ApiError.forbidden('This task belongs to another user');
 
-  const allowed = ['title', 'description', 'status', 'priority', 'dueDate'];
+  const before = {
+    previousStatus: existing.status,
+    previousCompletedAt: existing.completedAt,
+    previousRemindAt: existing.remindAt,
+  };
+
+  const allowed = ['title', 'description', 'status', 'priority', 'dueDate', 'remindAt'];
+  const applied = {};
   for (const key of allowed) {
-    if (key in changes) existing[key] = changes[key];
+    if (key in changes) {
+      existing[key] = changes[key];
+      applied[key] = changes[key];
+    }
   }
+  applyDerivedFields(existing, before);
 
   await existing.save();
-  return existing.toJSON();
+
+  const json = existing.toJSON();
+  publishChange(json, { ...before, changes: applied });
+  return json;
 }
 
 async function deleteTask(userId, taskId) {
@@ -146,7 +216,9 @@ async function deleteTask(userId, taskId) {
     throw ApiError.forbidden('This task belongs to another user');
   }
 
+  const snapshot = existing.toJSON();
   await Task.deleteOne({ _id: taskId });
+  eventBus.publish(EVENTS.TASK_DELETED, { task: snapshot });
 }
 
 module.exports = {

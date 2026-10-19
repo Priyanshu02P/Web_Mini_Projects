@@ -6,6 +6,7 @@ export default function TaskForm({ onCreate }) {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
+  const [remindAt, setRemindAt] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -14,16 +15,20 @@ export default function TaskForm({ onCreate }) {
     if (!title.trim()) return;
     setSubmitting(true);
     try {
-      await onCreate({
+      const saved = await onCreate({
         title: title.trim(),
         description: description.trim(),
         priority,
         dueDate: dueDate || null,
+        remindAt: remindAt ? new Date(remindAt).toISOString() : null,
       });
+      // Keep the user's input intact when the API rejects the create request.
+      if (saved === false) return;
       setTitle('');
       setDescription('');
       setPriority('medium');
       setDueDate('');
+      setRemindAt('');
       setExpanded(false);
     } finally {
       setSubmitting(false);
@@ -67,6 +72,14 @@ export default function TaskForm({ onCreate }) {
             <label>
               Due
               <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </label>
+            <label>
+              Remind me
+              <input
+                type="datetime-local"
+                value={remindAt}
+                onChange={(e) => setRemindAt(e.target.value)}
+              />
             </label>
           </div>
         </div>

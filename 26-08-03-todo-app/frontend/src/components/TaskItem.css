@@ -170,3 +170,23 @@
   color: var(--parchment-dim);
   font-weight: 400;
 }
+
+.taskitem__remind-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--parchment-dim);
+}
+
+.taskitem__remind-edit input {
+  background: var(--espresso);
+  border: 1px solid var(--umber-light);
+  border-radius: var(--radius-sm);
+  color: var(--parchment);
+  padding: 6px 8px;
+  font-size: 13px;
+  width: fit-content;
+}

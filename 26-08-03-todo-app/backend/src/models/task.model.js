@@ -38,6 +38,22 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // When the user wants to be nudged. Handled asynchronously by the
+    // reminder scheduler (see services/reminderScheduler.js).
+    remindAt: {
+      type: Date,
+      default: null,
+    },
+    // Set once the reminder has fired; cleared if remindAt is changed.
+    reminderFiredAt: {
+      type: Date,
+      default: null,
+    },
+    // Set when status becomes 'completed'; feeds productivity analytics.
+    completedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

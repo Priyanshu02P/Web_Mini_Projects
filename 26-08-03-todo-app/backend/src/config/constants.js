@@ -13,6 +13,10 @@ module.exports = {
   // Fixed roster: this learning project supports exactly 5 users.
   MAX_USERS: 5,
 
+  // Longest single setTimeout the reminder scheduler will arm (Node's limit is
+  // ~24.8 days); longer waits are re-armed in chunks.
+  MAX_TIMER_MS: 24 * 60 * 60 * 1000,
+
   TASK_STATUSES: ['pending', 'in-progress', 'completed'],
   TASK_PRIORITIES: ['low', 'medium', 'high'],
 };

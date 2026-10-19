@@ -1,0 +1,119 @@
+.bell {
+  position: relative;
+}
+
+.bell__btn {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--umber-light);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.bell__btn:hover {
+  background: var(--umber);
+}
+
+.bell__badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--danger);
+  color: var(--parchment);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bell__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: var(--espresso);
+  border: 1px solid var(--umber-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 12px 14px;
+  z-index: 50;
+}
+
+.bell__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-display);
+  color: var(--parchment);
+  margin-bottom: 8px;
+}
+
+.bell__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bell__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--umber);
+  opacity: 0.65;
+}
+
+.bell__item--unread {
+  opacity: 1;
+}
+
+.bell__msg {
+  margin: 0;
+  font-size: 13px;
+  color: var(--parchment);
+}
+
+.bell__time {
+  margin: 2px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--parchment-dim);
+}
+
+.bell__empty {
+  font-size: 13px;
+  color: var(--parchment-dim);
+  margin: 6px 0;
+}
+
+.bell__link {
+  background: none;
+  border: none;
+  color: var(--parchment-dim);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bell__enable {
+  margin-top: 10px;
+  width: 100%;
+  background: var(--umber);
+  color: var(--parchment);
+  border: 1px solid var(--umber-light);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
