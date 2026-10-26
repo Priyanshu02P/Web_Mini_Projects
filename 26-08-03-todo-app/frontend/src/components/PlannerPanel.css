@@ -1,0 +1,135 @@
+.planner {
+  background: var(--umber-dark);
+  border: 1px solid var(--umber);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 24px;
+}
+
+.planner__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.planner__title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  margin: 0;
+  color: var(--parchment);
+}
+
+.planner__btn {
+  background: var(--parchment);
+  color: var(--espresso);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.planner__btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.planner__hint,
+.planner__headline {
+  font-size: 13px;
+  color: var(--parchment-dim);
+  margin: 12px 0 0;
+}
+
+.planner__headline {
+  color: var(--parchment);
+  font-family: var(--font-display);
+  font-size: 15px;
+}
+
+.planner__error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
+.planner__list {
+  list-style: none;
+  counter-reset: focus;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.planner__item {
+  counter-increment: focus;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--espresso);
+  border: 1px solid var(--umber);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.planner__item::before {
+  content: counter(focus);
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--umber-light);
+  width: 20px;
+  text-align: center;
+}
+
+.planner__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.planner__task {
+  font-size: 14px;
+  color: var(--parchment);
+}
+
+.planner__meta {
+  display: flex;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--parchment-dim);
+}
+
+.planner__pill {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.planner__pill--high {
+  color: #f59e0b;
+}
+
+.planner__reason {
+  font-size: 12px;
+  color: var(--parchment-dim);
+  font-style: italic;
+}
+
+.planner__start {
+  background: transparent;
+  color: var(--parchment);
+  border: 1px solid var(--umber-light);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.planner__start:hover {
+  background: var(--umber);
+}

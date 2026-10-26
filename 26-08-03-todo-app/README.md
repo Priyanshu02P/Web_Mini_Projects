@@ -158,6 +158,25 @@ event-driven design (`backend/src/events/`):
   with Redis Streams / BullMQ / RabbitMQ. Analytics days are UTC. The SSE endpoint takes the JWT
   as a query parameter because `EventSource` can't send headers.
 
+## AI features (Groq)
+
+Two AI features run on [Groq](https://console.groq.com)'s OpenAI-compatible API. The key lives only on the backend and the browser never sees it.
+
+| Feature | Where | What it does |
+| --- | --- | --- |
+| **Smart fill** | button next to *Add* | Turns a sentence such as `pay rent Friday 5pm, remind me, urgent` into title, priority, due date and reminder. It only fills the form, so you review and press *Add* yourself. |
+| **Plan my day** | panel above the form | Reads your open tasks (overdue, due dates, priority, in-progress) and returns an ordered top-5 focus list with a reason for each, plus a one-click *Start*. |
+
+**Enable it:** set `GROQ_API_KEY` in `.env` (see `.env.example`) and restart the backend. With no key the AI buttons are hidden and the rest of the app is unchanged. Optional: `GROQ_MODEL` (default `llama-3.3-70b-versatile`).
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/api/ai/status` | `{ data: { enabled } }` |
+| POST | `/api/ai/parse-task` | body `{ text, timezone }` returns `{ title, description, priority, dueDate, remindAt }` |
+| GET | `/api/ai/plan?timezone=` | returns `{ headline, focus: [{ id, title, priority, dueDate, status, reason }] }` |
+
+Design notes: model output is validated and coerced server-side (enums, date formats, task ids) before reaching the client; AI endpoints are rate-limited per user (`AI_RATE_LIMIT_PER_MIN`, default 15); and upstream Groq 401s are mapped to 503 so they never log the user out.
+
 ## Color palette
 
 The UI is built strictly from this fixed palette (a "ledger/journal" theme):

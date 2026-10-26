@@ -5,6 +5,7 @@ import TaskForm from '../components/TaskForm';
 import TaskList from '../components/TaskList';
 import CacheStats from '../components/CacheStats';
 import AnalyticsPanel from '../components/AnalyticsPanel';
+import PlannerPanel from '../components/PlannerPanel';
 import useEventStream from '../hooks/useEventStream';
 import * as reminderApi from '../api/reminderApi';
 import { invalidate } from '../api/cache';
@@ -205,6 +206,8 @@ export default function DashboardPage() {
         </div>
 
         <AnalyticsPanel refreshKey={analyticsTick} />
+
+        <PlannerPanel onStart={(id) => handlePatch(id, { status: 'in-progress' })} />
 
         <TaskForm onCreate={handleCreate} />
         <FilterBar status={status} onStatusChange={handleStatusChange} query={query} onQueryChange={handleQueryChange} />

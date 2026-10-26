@@ -30,6 +30,18 @@ class ApiError extends Error {
   static conflict(message = 'Conflict') {
     return new ApiError(409, message);
   }
+
+  static tooManyRequests(message = 'Too many requests') {
+    return new ApiError(429, message);
+  }
+
+  static badGateway(message = 'Upstream service error') {
+    return new ApiError(502, message);
+  }
+
+  static unavailable(message = 'Service unavailable') {
+    return new ApiError(503, message);
+  }
 }
 
 module.exports = ApiError;

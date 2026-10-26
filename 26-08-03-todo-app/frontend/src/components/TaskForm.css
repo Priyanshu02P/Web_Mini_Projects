@@ -84,3 +84,36 @@
   padding: 6px 8px;
   font-size: 13px;
 }
+
+.taskform__ai {
+  background: transparent;
+  color: var(--parchment);
+  border: 1px solid var(--umber-light);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.taskform__ai:hover:not(:disabled) {
+  background: var(--umber);
+}
+
+.taskform__ai:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.taskform__note {
+  margin: 8px 4px 0;
+  font-size: 12px;
+}
+
+.taskform__note--ok {
+  color: var(--parchment-dim);
+}
+
+.taskform__note--error {
+  color: var(--danger);
+}

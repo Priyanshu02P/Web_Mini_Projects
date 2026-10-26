@@ -10,6 +10,14 @@ module.exports = {
   // service; locally it defaults to a MongoDB instance on localhost.
   MONGO_URI: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/todo-app',
 
+  // --- AI features (Groq, OpenAI-compatible API) ---------------------------
+  // Leave GROQ_API_KEY empty to disable AI features; the rest of the app works.
+  GROQ_API_KEY: process.env.GROQ_API_KEY || '',
+  GROQ_MODEL: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+  GROQ_BASE_URL: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
+  GROQ_TIMEOUT_MS: parseInt(process.env.GROQ_TIMEOUT_MS, 10) || 15000,
+  AI_RATE_LIMIT_PER_MIN: parseInt(process.env.AI_RATE_LIMIT_PER_MIN, 10) || 15,
+
   // Fixed roster: this learning project supports exactly 5 users.
   MAX_USERS: 5,
 
